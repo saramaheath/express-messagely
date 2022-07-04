@@ -64,7 +64,14 @@ class User {
   /** All: basic info on all users:
    * [{username, first_name, last_name}, ...] */
 
-  static async all() {}
+  static async all() {
+    const result = await db.query(
+      `SELECT username, first_name, last_name
+      FROM users`
+    );
+
+    return result.rows;
+  }
 
   /** Get: get user by username
    *
@@ -75,7 +82,18 @@ class User {
    *          join_at,
    *          last_login_at } */
 
-  static async get(username) {}
+  static async get(username) {
+    const result = await db.query(
+      `SELECT username, first_name, last_name, phone, join_at, last_login_at
+      FROM users
+      WHERE username = $1`, [username]
+    );
+    const user = result.rows[0];
+
+    if (!user) throw new NotFoundError(`No such user: ${username}`);
+    
+    return user
+  }
 
   /** Return messages from this user.
    *
@@ -85,17 +103,41 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesFrom(username) {}
+  static async messagesFrom(username) {
+    const result = await db.query(
+      `SELECT id, to_user, body, sent_at, read_at
+      FROM messages
+      JOIN users ON users.username = messages.from_username
+      WHERE messages.to_username = $1`,
+      [username]
+    )
+    const messages = result.rows;
+    if (!messages) throw new NotFoundError(`No such user: ${username}`);
+
+    return messages
+  }
 
   /** Return messages to this user.
    *
    * [{id, from_user, body, sent_at, read_at}]
    *
    * where from_user is
-   *   {id, first_name, last_name, phone}
+   *   {username, first_name, last_name, phone}
    */
 
-  static async messagesTo(username) {}
+  static async messagesTo(username) {
+    const result = await db.query(
+      `SELECT id, from_user, body, sent_at, read_at
+      FROM messages
+      JOIN users ON users.username = messages.to_username
+      WHERE messages.from_username = $1`,
+      [username]
+    )
+    const messages = result.rows;
+    if (!messages) throw new NotFoundError(`No such user: ${username}`);
+
+    return messages
+  }
 }
 
 module.exports = User;
