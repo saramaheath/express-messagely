@@ -18,6 +18,7 @@ function authenticateJWT(req, res, next) {
     return next();
   } catch (err) {
     // error in this middleware isn't error -- continue on
+    console.log("we made it!")
     return next();
   }
 }
