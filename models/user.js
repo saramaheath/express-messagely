@@ -5,14 +5,17 @@
 const { NotFoundError } = require("../expressError");
 const db = require("../db");
 const bcrypt = require("bcrypt");
-const res = require("express/lib/response");
+const { BCRYPT_WORK_FACTOR } = require("../config")
+
+
 
 class User {
-  /** Register new user. Returns
-   *    {username, password, first_name, last_name, phone}
+  /** Register new user. Hashes Password. 
+   * Returns {username, password, first_name, last_name, phone}
    */
 
   static async register({ username, password, first_name, last_name, phone }) {
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR)
     const result = await db.query(
       `INSERT INTO users (username,
 							password, 
@@ -24,7 +27,7 @@ class User {
 							)
 				VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
 				RETURNING username, password, first_name, last_name, phone`,
-      [username, password, first_name, last_name, phone]
+      [username, hashedPassword, first_name, last_name, phone]
     );
 
     const user = result.rows[0];
@@ -37,14 +40,16 @@ class User {
     const result = await db.query(
       `SELECT username, password
 			FROM users
-			WHERE username = $1 AND password = $2`,
-      [username, password]
+			WHERE username = $1`,
+      [username]
     );
     const user = result.rows[0];
-    if (!user) {
-      return false;
+  
+    if (user) {
+      if (await bcrypt.compare(password, user.password) === true)
+      return true;
     }
-    return true;
+    return false;
   }
 
   /** Update last_login_at for user
@@ -54,7 +59,7 @@ class User {
       `UPDATE users
 			SET last_login_at = current_timestamp
 			WHERE username = $1
-      RETURNING username, password, first_name, last_name, phone, last_login_at`,
+      RETURNING username`,
       [username]
     );
 
@@ -62,7 +67,7 @@ class User {
 
     if (!user) throw new NotFoundError(`No such user: ${username}`);
 
-    return user;
+    // return user;
   }
 
   /** All: basic info on all users:
@@ -125,7 +130,6 @@ class User {
       [username]
     );
     const messages = result.rows;
-    console.log(result.rows, "!!!!!!!!!!!!!!!!!!");
 
     return messages.map((m) => ({
       id: m.id,
@@ -166,8 +170,6 @@ class User {
       [username]
     );
     const messages = result.rows;
-    console.log(result.rows, "!!!!!!!!!!!!!!!!");
-    if (!messages) throw new NotFoundError(`No such user: ${username}`);
 
     return messages.map((m) => ({
       id: m.id,
