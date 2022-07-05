@@ -110,17 +110,35 @@ class User {
 
   static async messagesFrom(username) {
     const result = await db.query(
-      `SELECT id, to_username, body, sent_at, read_at
+      `SELECT id, 
+              to_username, 
+              body, 
+              sent_at, 
+              read_at, 
+              username, 
+              first_name, 
+              last_name, 
+              phone 
       FROM messages
-      JOIN users ON users.username = messages.from_username
+      JOIN users ON users.username = messages.to_username
       WHERE messages.from_username = $1`,
       [username]
     );
     const messages = result.rows;
-	console.log(result.rows, '!!!!!!!!!!!!!!!!!!');
-    if (!messages) throw new NotFoundError(`No such user: ${username}`);
+    console.log(result.rows, "!!!!!!!!!!!!!!!!!!");
 
-    return messages;
+    return messages.map((m) => ({
+      id: m.id,
+      to_user: {
+        username: m.to_username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone,
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at,
+    }));
   }
 
   /** Return messages to this user.
@@ -133,16 +151,36 @@ class User {
 
   static async messagesTo(username) {
     const result = await db.query(
-      `SELECT id, from_username, body, sent_at, read_at
+      `SELECT id, 
+                from_username, 
+                body, 
+                sent_at, 
+                read_at, 
+                username, 
+                first_name, 
+                last_name, 
+                phone
       FROM messages
-      JOIN users ON users.username = messages.to_username
-      WHERE messages.from_username = $1`,
+            JOIN users ON users.username = messages.from_username
+      WHERE messages.to_username = $1`,
       [username]
     );
     const messages = result.rows;
+    console.log(result.rows, "!!!!!!!!!!!!!!!!");
     if (!messages) throw new NotFoundError(`No such user: ${username}`);
 
-    return messages;
+    return messages.map((m) => ({
+      id: m.id,
+      from_user: {
+        username: m.from_username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone,
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at,
+    }));
   }
 }
 
