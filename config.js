@@ -7,10 +7,10 @@
 require("dotenv").config();
 
 const DB_URI = (process.env.NODE_ENV === "test")
-? "postgresql://saramaheath:1234@localhost/messagely_test"
-: "postgresql://saramaheath:1234@localhost/messagely";
-    // ? "postgresql://kestrel:obliviate@localhost/messagely_test"
-    // : "postgresql://kestrel:obliviate@localhost/messagely";
+// ? "postgresql://saramaheath:1234@localhost/messagely_test"
+// : "postgresql://saramaheath:1234@localhost/messagely";
+    ? "postgresql://kestrel:obliviate@localhost/messagely_test"
+    : "postgresql://kestrel:obliviate@localhost/messagely";
 const SECRET_KEY = process.env.SECRET_KEY || "secret";
 
 const BCRYPT_WORK_FACTOR = 12;
