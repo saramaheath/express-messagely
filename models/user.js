@@ -12,21 +12,23 @@ class User {
    *    {username, password, first_name, last_name, phone}
    */
 
-  static async register({username, password, first_name, last_name, phone}) {
+  static async register({ username, password, first_name, last_name, phone }) {
     const result = await db.query(
       `INSERT INTO users (username,
 							password, 
 							first_name, 
 							last_name,
 							phone,
-							join_at)
-				VALUES ($1, $2, $3, $4, $5, current_timestamp)
+							join_at,
+							last_login_at 
+							)
+				VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
 				RETURNING username, password, first_name, last_name, phone`,
-      [username, password, first_name, last_name, phone]);
+      [username, password, first_name, last_name, phone]
+    );
+
     const user = result.rows[0];
-        console.log("++++++++++++++++", result.rows)
-    
-    return user
+    return user;
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
@@ -46,7 +48,6 @@ class User {
   }
 
   /** Update last_login_at for user
-   * TODO: current timestamp to add timezone
    */
   static async updateLoginTimestamp(username) {
     const result = await db.query(
@@ -58,7 +59,7 @@ class User {
     );
 
     const user = result.rows[0];
-    console.log('+++++++', result.rows)
+
     if (!user) throw new NotFoundError(`No such user: ${username}`);
 
     return user;
@@ -97,14 +98,6 @@ class User {
     if (!user) throw new NotFoundError(`No such user: ${username}`);
 
     return user;
-    // return {
-    //   username,
-    //   first_name,
-    //   last_name,
-    //   phone,
-    //   join_at,
-    //   last_login_at,
-    // };
   }
 
   /** Return messages from this user.
@@ -120,10 +113,11 @@ class User {
       `SELECT id, to_username, body, sent_at, read_at
       FROM messages
       JOIN users ON users.username = messages.from_username
-      WHERE messages.to_username = $1`,
+      WHERE messages.from_username = $1`,
       [username]
     );
     const messages = result.rows;
+	console.log(result.rows, '!!!!!!!!!!!!!!!!!!');
     if (!messages) throw new NotFoundError(`No such user: ${username}`);
 
     return messages;
